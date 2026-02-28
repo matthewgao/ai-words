@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
+	BarChart3,
 	BookOpen,
 	GraduationCap,
 	Home,
@@ -16,6 +17,7 @@ const navItems = [
 	{ to: "/grades", label: "词库", icon: BookOpen },
 	{ to: "/quiz", label: "背诵", icon: GraduationCap },
 	{ to: "/wrong-words", label: "错题本", icon: XCircle },
+	{ to: "/stats", label: "统计", icon: BarChart3 },
 ];
 
 const adminItems = [{ to: "/admin", label: "管理", icon: Settings }];

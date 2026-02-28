@@ -11,6 +11,7 @@ import { QuizSetupPage } from "@/pages/QuizSetupPage";
 import { QuizPlayPage } from "@/pages/QuizPlayPage";
 import { QuizResultPage } from "@/pages/QuizResultPage";
 import { WrongWordsPage } from "@/pages/WrongWordsPage";
+import { StatsPage } from "@/pages/StatsPage";
 import { AdminPage } from "@/pages/AdminPage";
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
 							path="wrong-words"
 							element={<WrongWordsPage />}
 						/>
+						<Route path="stats" element={<StatsPage />} />
 						<Route path="admin" element={<AdminPage />} />
 					</Route>
 				</Routes>

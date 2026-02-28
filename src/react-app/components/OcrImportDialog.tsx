@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { ImagePlus, Loader2, CheckSquare, Square, Search, Upload } from "lucide-react";
+import Cropper from "react-easy-crop";
+import type { Area, Point } from "react-easy-crop";
+import { ImagePlus, Loader2, CheckSquare, Square, Search, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import { api } from "@/lib/api";
+import { getCroppedImg } from "@/lib/crop-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +49,9 @@ export function OcrImportDialog({
 	const [lookingUp, setLookingUp] = useState(false);
 	const [importing, setImporting] = useState(false);
 	const [error, setError] = useState("");
+	const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+	const [zoom, setZoom] = useState(1);
+	const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	function reset() {
@@ -60,6 +66,9 @@ export function OcrImportDialog({
 		setLookingUp(false);
 		setImporting(false);
 		setError("");
+		setCrop({ x: 0, y: 0 });
+		setZoom(1);
+		setCroppedAreaPixels(null);
 	}
 
 	function handleOpenChange(value: boolean) {
@@ -76,6 +85,9 @@ export function OcrImportDialog({
 		setImageFile(file);
 		if (imagePreview) URL.revokeObjectURL(imagePreview);
 		setImagePreview(URL.createObjectURL(file));
+		setCrop({ x: 0, y: 0 });
+		setZoom(1);
+		setCroppedAreaPixels(null);
 	}
 
 	function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -95,7 +107,12 @@ export function OcrImportDialog({
 		setRecognizing(true);
 		setError("");
 		try {
-			const result = await api.ocrRecognize(imageFile);
+			let fileToSend = imageFile;
+			if (croppedAreaPixels) {
+				const blob = await getCroppedImg(imagePreview, croppedAreaPixels);
+				fileToSend = new File([blob], imageFile.name, { type: "image/jpeg" });
+			}
+			const result = await api.ocrRecognize(fileToSend);
 			setOcrWords(result.words);
 			setRawText(result.rawText);
 			setSelected(new Set(result.words));
@@ -189,7 +206,7 @@ export function OcrImportDialog({
 		edit: "确认导入",
 	};
 	const stepDesc: Record<Step, string> = {
-		upload: "上传包含英文单词的图片，系统将自动识别其中的单词",
+		upload: "上传包含英文单词的图片，可裁剪选择识别区域",
 		select: `识别到 ${ocrWords.length} 个单词，请勾选需要导入的单词`,
 		edit: "查询到音标和释义，可编辑后确认导入",
 	};
@@ -238,24 +255,42 @@ export function OcrImportDialog({
 										</p>
 									</div>
 								</div>
-							) : (
-								<div className="space-y-3">
-									<div className="relative rounded-lg border overflow-hidden">
-										<img
-											src={imagePreview}
-											alt="预览"
-											className="max-h-64 w-full object-contain bg-muted/30"
-										/>
-									</div>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => fileInputRef.current?.click()}
-									>
-										重新选择
-									</Button>
+						) : (
+							<div className="space-y-3">
+								<div className="relative h-64 rounded-lg border overflow-hidden bg-muted/30">
+									<Cropper
+										image={imagePreview}
+										crop={crop}
+										zoom={zoom}
+										onCropChange={setCrop}
+										onZoomChange={setZoom}
+										onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
+										objectFit="contain"
+									/>
 								</div>
-							)}
+								<div className="flex items-center gap-2">
+									<ZoomOut className="h-4 w-4 text-muted-foreground shrink-0" />
+									<input
+										type="range"
+										min={1}
+										max={3}
+										step={0.1}
+										value={zoom}
+										onChange={(e) => setZoom(Number(e.target.value))}
+										className="flex-1 accent-primary"
+										aria-label="缩放"
+									/>
+									<ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => fileInputRef.current?.click()}
+								>
+									重新选择
+								</Button>
+							</div>
+						)}
 						</div>
 					)}
 
