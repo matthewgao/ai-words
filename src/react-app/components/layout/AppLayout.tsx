@@ -32,7 +32,7 @@ export function AppLayout() {
 			<aside className="hidden w-60 flex-col border-r bg-sidebar md:flex">
 				<div className="flex h-14 items-center border-b px-4">
 					<GraduationCap className="mr-2 h-6 w-6 text-primary" />
-					<span className="text-lg font-bold">背单词</span>
+					<span className="text-lg font-bold">高清远来背单词</span>
 				</div>
 
 				<nav className="flex-1 space-y-1 p-3">

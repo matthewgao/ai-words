@@ -55,7 +55,7 @@ export function RegisterPage() {
 						<GraduationCap className="h-6 w-6 text-primary" />
 					</div>
 					<CardTitle>注册</CardTitle>
-					<CardDescription>创建账号加入背单词</CardDescription>
+					<CardDescription>创建账号加入学习</CardDescription>
 				</CardHeader>
 				<form onSubmit={handleSubmit}>
 					<CardContent className="space-y-4">

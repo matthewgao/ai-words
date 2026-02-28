@@ -44,7 +44,7 @@ export function LoginPage() {
 						<GraduationCap className="h-6 w-6 text-primary" />
 					</div>
 					<CardTitle>登录</CardTitle>
-					<CardDescription>登录你的账号开始背单词</CardDescription>
+					<CardDescription>登录你的账号开始学习</CardDescription>
 				</CardHeader>
 				<form onSubmit={handleSubmit}>
 					<CardContent className="space-y-4">

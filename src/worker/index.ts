@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createClient } from "@supabase/supabase-js";
+import { recognizeAdvanced, extractEnglishWords } from "./aliyun-ocr";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -217,6 +218,29 @@ app.post("/api/admin/words/batch", async (c) => {
 	const { data, error } = await supabase.from("words").insert(body.words).select();
 	if (error) return c.json({ error: error.message }, 400);
 	return c.json(data, 201);
+});
+
+// OCR 图片识别
+app.post("/api/admin/ocr/recognize", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	try {
+		const formData = await c.req.formData();
+		const file = formData.get("image");
+		if (!file || !(file instanceof File)) {
+			return c.json({ error: "缺少图片文件" }, 400);
+		}
+
+		const imageBytes = await file.arrayBuffer();
+		const rawText = await recognizeAdvanced(c.env, imageBytes);
+		const words = extractEnglishWords(rawText);
+
+		return c.json({ words, rawText });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "OCR 识别失败";
+		return c.json({ error: message }, 500);
+	}
 });
 
 app.put("/api/admin/words/:id", async (c) => {

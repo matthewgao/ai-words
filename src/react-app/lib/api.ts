@@ -106,4 +106,23 @@ export const api = {
 			meanings: Array<{ partOfSpeech: string; definition: string }>;
 			chineseDefinition: string;
 		}>(`/api/dict/lookup?word=${encodeURIComponent(word)}`),
+
+	// OCR 图片识别
+	ocrRecognize: async (image: File): Promise<{ words: string[]; rawText: string }> => {
+		const headers = await getAuthHeaders();
+		const formData = new FormData();
+		formData.append("image", image);
+		const res = await fetch("/api/admin/ocr/recognize", {
+			method: "POST",
+			headers,
+			body: formData,
+		});
+		if (!res.ok) {
+			const body = await res.json().catch(() => ({}));
+			throw new Error(
+				(body as { error?: string }).error || `OCR 识别失败 (${res.status})`,
+			);
+		}
+		return res.json();
+	},
 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
 	ChevronRight,
+	ImagePlus,
 	Loader2,
 	Plus,
 	Search,
@@ -25,6 +26,7 @@ import {
 	DialogTitle,
 	DialogDescription,
 } from "@/components/ui/dialog";
+import { OcrImportDialog } from "@/components/OcrImportDialog";
 
 interface Grade {
 	id: number;
@@ -70,6 +72,7 @@ export function AdminPage() {
 	});
 	const [lookingUp, setLookingUp] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [ocrDialog, setOcrDialog] = useState(false);
 
 	async function loadGrades() {
 		const supabase = getSupabaseSync();
@@ -376,7 +379,16 @@ export function AdminPage() {
 								? `${selectedGrade?.name} / ${selectedUnit.name}`
 								: "选择一个单元查看单词"}
 						</span>
-						{selectedUnit && (
+					{selectedUnit && (
+						<div className="flex gap-2">
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setOcrDialog(true)}
+							>
+								<ImagePlus className="mr-1 h-4 w-4" />
+								图片导入
+							</Button>
 							<Button
 								size="sm"
 								onClick={() => {
@@ -392,7 +404,8 @@ export function AdminPage() {
 								<Plus className="mr-1 h-4 w-4" />
 								添加单词
 							</Button>
-						)}
+						</div>
+					)}
 					</div>
 					<div className="divide-y">
 						{words.map((w) => (
@@ -627,6 +640,18 @@ export function AdminPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* OCR 图片导入 Dialog */}
+			{selectedUnit && (
+				<OcrImportDialog
+					open={ocrDialog}
+					onOpenChange={setOcrDialog}
+					unitId={selectedUnit.id}
+					onImported={() => {
+						if (selectedUnit) loadWords(selectedUnit.id);
+					}}
+				/>
+			)}
 		</div>
 	);
 }
