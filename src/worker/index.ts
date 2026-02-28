@@ -66,30 +66,48 @@ app.get("/api/dict/lookup", async (c) => {
 			entry?.phonetic ||
 			entry?.phonetics?.find((p) => p.text)?.text ||
 			"";
+		const posAbbr: Record<string, string> = {
+			noun: "n.",
+			verb: "v.",
+			adjective: "adj.",
+			adverb: "adv.",
+			pronoun: "pron.",
+			preposition: "prep.",
+			conjunction: "conj.",
+			interjection: "int.",
+		};
+
 		const meanings =
 			entry?.meanings?.map((m) => ({
 				partOfSpeech: m.partOfSpeech,
 				definition: m.definitions[0]?.definition || "",
 			})) || [];
 
-		// 尝试将第一个英文释义翻译成中文
+		// 直接翻译单词本身，得到简洁的中文词义
 		let chineseDefinition = "";
-		const firstDef = meanings[0]?.definition;
-		if (firstDef) {
-			try {
-				const transRes = await fetch(
-					`https://api.mymemory.translated.net/get?q=${encodeURIComponent(firstDef)}&langpair=en|zh-CN`,
-				);
-				if (transRes.ok) {
-					const transData: {
-						responseData?: { translatedText?: string };
-					} = await transRes.json();
-					chineseDefinition =
-						transData.responseData?.translatedText || "";
+		try {
+			const transRes = await fetch(
+				`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-CN`,
+			);
+			if (transRes.ok) {
+				const transData: {
+					responseData?: { translatedText?: string };
+				} = await transRes.json();
+				const translated =
+					transData.responseData?.translatedText || "";
+				if (translated && translated.toLowerCase() !== word.toLowerCase()) {
+					const parts = meanings
+						.map((m) => posAbbr[m.partOfSpeech] || "")
+						.filter(Boolean);
+					const uniqueParts = [...new Set(parts)];
+					const prefix = uniqueParts.length > 0
+						? uniqueParts.join("/") + " "
+						: "";
+					chineseDefinition = prefix + translated;
 				}
-			} catch {
-				// 翻译失败不阻塞
 			}
+		} catch {
+			// 翻译失败不阻塞
 		}
 
 		return c.json({
