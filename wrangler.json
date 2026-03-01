@@ -13,7 +13,10 @@
 		"not_found_handling": "single-page-application"
 	},
 	"vars": {
-		"SUPABASE_URL": "",
-		"SUPABASE_ANON_KEY": ""
+		"SUPABASE_URL": "https://rdfcikdcqublldwizedr.supabase.co",
+		"SUPABASE_ANON_KEY": "",
+		"ALIBABA_CLOUD_ACCESS_KEY_ID": "",
+		"ALIBABA_CLOUD_ACCESS_KEY_SECRET": "",
+		"SUPABASE_SERVICE_ROLE_KEY": ""
 	}
 }
