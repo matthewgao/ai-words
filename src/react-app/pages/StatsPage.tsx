@@ -107,7 +107,7 @@ export function StatsPage() {
 		load();
 	}, [user, days]);
 
-	const { dailyData, totalCount, totalCorrect, totalWrong, avgAccuracy } =
+	const { dailyData, totalCount, totalWrong, avgAccuracy } =
 		useMemo(() => {
 			const map = buildEmptyDays(days);
 

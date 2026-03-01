@@ -10,6 +10,7 @@ import {
 	Languages,
 	ListTodo,
 	LogOut,
+	Mic,
 	Settings,
 	XCircle,
 } from "lucide-react";
@@ -56,8 +57,11 @@ const navGroups: NavGroup[] = [
 		key: "chinese",
 		label: "语文",
 		icon: BookText,
-		to: "/chinese",
-		items: null,
+		to: "/chinese/dictation",
+		items: [
+			{ to: "/chinese/dictation", label: "辅助默写", icon: Mic },
+			{ to: "/chinese/wrong-words", label: "错题本", icon: XCircle },
+		],
 	},
 ];
 

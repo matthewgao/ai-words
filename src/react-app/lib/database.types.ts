@@ -220,6 +220,147 @@ export type Database = {
 					},
 				];
 			};
+			cn_grades: {
+				Row: {
+					id: number;
+					name: string;
+					sort_order: number;
+					created_at: string;
+				};
+				Insert: {
+					name: string;
+					sort_order?: number;
+					created_at?: string;
+				};
+				Update: {
+					name?: string;
+					sort_order?: number;
+				};
+				Relationships: [];
+			};
+			cn_units: {
+				Row: {
+					id: number;
+					grade_id: number;
+					name: string;
+					sort_order: number;
+					created_at: string;
+				};
+				Insert: {
+					grade_id: number;
+					name: string;
+					sort_order?: number;
+					created_at?: string;
+				};
+				Update: {
+					grade_id?: number;
+					name?: string;
+					sort_order?: number;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "cn_units_grade_id_fkey";
+						columns: ["grade_id"];
+						isOneToOne: false;
+						referencedRelation: "cn_grades";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			cn_words: {
+				Row: {
+					id: number;
+					unit_id: number;
+					word: string;
+					created_at: string;
+				};
+				Insert: {
+					unit_id: number;
+					word: string;
+					created_at?: string;
+				};
+				Update: {
+					unit_id?: number;
+					word?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "cn_words_unit_id_fkey";
+						columns: ["unit_id"];
+						isOneToOne: false;
+						referencedRelation: "cn_units";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			cn_wrong_words: {
+				Row: {
+					id: number;
+					user_id: string;
+					word_id: number;
+					wrong_count: number;
+					correct_streak: number;
+					importance: number;
+					mastered: boolean;
+					last_wrong_at: string;
+					created_at: string;
+				};
+				Insert: {
+					user_id: string;
+					word_id: number;
+					wrong_count?: number;
+					correct_streak?: number;
+					importance?: number;
+					mastered?: boolean;
+					last_wrong_at?: string;
+					created_at?: string;
+				};
+				Update: {
+					wrong_count?: number;
+					correct_streak?: number;
+					importance?: number;
+					mastered?: boolean;
+					last_wrong_at?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "cn_wrong_words_word_id_fkey";
+						columns: ["word_id"];
+						isOneToOne: false;
+						referencedRelation: "cn_words";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			cn_dictation_records: {
+				Row: {
+					id: number;
+					user_id: string;
+					word_id: number;
+					is_correct: boolean;
+					created_at: string;
+				};
+				Insert: {
+					user_id: string;
+					word_id: number;
+					is_correct: boolean;
+					created_at?: string;
+				};
+				Update: {
+					user_id?: string;
+					word_id?: number;
+					is_correct?: boolean;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "cn_dictation_records_word_id_fkey";
+						columns: ["word_id"];
+						isOneToOne: false;
+						referencedRelation: "cn_words";
+						referencedColumns: ["id"];
+					},
+				];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;

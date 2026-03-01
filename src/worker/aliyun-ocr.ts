@@ -117,6 +117,27 @@ export async function recognizeAdvanced(
 }
 
 /**
+ * 从 OCR 文本中提取中文词语，按空格/换行/标点分割，去重返回。
+ * 仅保留包含中文字符的 token。
+ */
+export function extractChineseWords(text: string): string[] {
+	const tokens = text.split(/[\s,，。.、；;：:！!？?""''（）()【】[\]《》<>—\-–·\d]+/);
+	const seen = new Set<string>();
+	const words: string[] = [];
+
+	for (const token of tokens) {
+		const clean = token.trim();
+		if (!clean) continue;
+		if (!/[\u4e00-\u9fff]/.test(clean)) continue;
+		if (seen.has(clean)) continue;
+		seen.add(clean);
+		words.push(clean);
+	}
+
+	return words;
+}
+
+/**
  * 从 OCR 文本中提取英文单词，去重后按字母排序返回。
  * 仅保留纯字母、长度 >= 2 的 token。
  */

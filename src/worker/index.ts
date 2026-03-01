@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createClient } from "@supabase/supabase-js";
-import { recognizeAdvanced, extractEnglishWords } from "./aliyun-ocr";
+import { recognizeAdvanced, extractEnglishWords, extractChineseWords } from "./aliyun-ocr";
+import { synthesizeSpeech, getToken } from "./aliyun-tts";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -291,6 +292,195 @@ app.delete("/api/admin/words/:id", async (c) => {
 	const { error } = await supabase.from("words").delete().eq("id", id);
 	if (error) return c.json({ error: error.message }, 400);
 	return c.json({ ok: true });
+});
+
+// ============ TTS 代理 API ============
+
+app.post("/api/tts", async (c) => {
+	const authHeader = c.req.header("Authorization");
+	if (!authHeader) return c.json({ error: "未登录" }, 401);
+
+	const { text } = await c.req.json<{ text: string }>();
+	if (!text) return c.json({ error: "缺少 text 参数" }, 400);
+
+	try {
+		const token = await getToken(c.env);
+		const res = await synthesizeSpeech(token, text);
+		const contentType = res.headers.get("Content-Type") || "";
+
+		if (contentType.startsWith("audio/")) {
+			return new Response(res.body, {
+				headers: {
+					"Content-Type": contentType,
+					"Cache-Control": "public, max-age=86400",
+				},
+			});
+		}
+
+		const errorBody = await res.text();
+		return c.json({ error: `TTS 合成失败: ${errorBody}` }, 502);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "TTS 合成失败";
+		return c.json({ error: message }, 500);
+	}
+});
+
+// ============ 语文管理员 CRUD API ============
+
+// 语文学年
+app.post("/api/admin/chinese/grades", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const body = await c.req.json<{ name: string; sort_order?: number }>();
+	const { data, error } = await supabase.from("cn_grades").insert(body).select().single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data, 201);
+});
+
+app.put("/api/admin/chinese/grades/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const body = await c.req.json<{ name?: string; sort_order?: number }>();
+	const { data, error } = await supabase
+		.from("cn_grades")
+		.update(body)
+		.eq("id", id)
+		.select()
+		.single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data);
+});
+
+app.delete("/api/admin/chinese/grades/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const { error } = await supabase.from("cn_grades").delete().eq("id", id);
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json({ ok: true });
+});
+
+// 语文单元
+app.post("/api/admin/chinese/units", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const body = await c.req.json<{ grade_id: number; name: string; sort_order?: number }>();
+	const { data, error } = await supabase.from("cn_units").insert(body).select().single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data, 201);
+});
+
+app.put("/api/admin/chinese/units/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const body = await c.req.json<{ name?: string; sort_order?: number }>();
+	const { data, error } = await supabase
+		.from("cn_units")
+		.update(body)
+		.eq("id", id)
+		.select()
+		.single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data);
+});
+
+app.delete("/api/admin/chinese/units/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const { error } = await supabase.from("cn_units").delete().eq("id", id);
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json({ ok: true });
+});
+
+// 语文词汇
+app.post("/api/admin/chinese/words", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const body = await c.req.json<{ unit_id: number; word: string }>();
+	const { data, error } = await supabase.from("cn_words").insert(body).select().single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data, 201);
+});
+
+app.post("/api/admin/chinese/words/batch", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const body = await c.req.json<{
+		words: Array<{ unit_id: number; word: string }>;
+	}>();
+	const { data, error } = await supabase.from("cn_words").insert(body.words).select();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data, 201);
+});
+
+app.put("/api/admin/chinese/words/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const body = await c.req.json<{ word?: string }>();
+	const { data, error } = await supabase
+		.from("cn_words")
+		.update(body)
+		.eq("id", id)
+		.select()
+		.single();
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json(data);
+});
+
+app.delete("/api/admin/chinese/words/:id", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY);
+	const id = c.req.param("id");
+	const { error } = await supabase.from("cn_words").delete().eq("id", id);
+	if (error) return c.json({ error: error.message }, 400);
+	return c.json({ ok: true });
+});
+
+// 语文 OCR 图片识别
+app.post("/api/admin/chinese/ocr/recognize", async (c) => {
+	const denied = await requireAdmin(c);
+	if (denied) return denied;
+
+	try {
+		const formData = await c.req.formData();
+		const file = formData.get("image");
+		if (!file || !(file instanceof File)) {
+			return c.json({ error: "缺少图片文件" }, 400);
+		}
+
+		const imageBytes = await file.arrayBuffer();
+		const rawText = await recognizeAdvanced(c.env, imageBytes);
+		const words = extractChineseWords(rawText);
+
+		return c.json({ words, rawText });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "OCR 识别失败";
+		return c.json({ error: message }, 500);
+	}
 });
 
 export default app;

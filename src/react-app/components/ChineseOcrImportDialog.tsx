@@ -1,12 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { ImagePlus, Loader2, CheckSquare, Square, Search, Upload, ClipboardPaste } from "lucide-react";
+import {
+	ImagePlus,
+	Loader2,
+	CheckSquare,
+	Square,
+	Search,
+	Upload,
+	ClipboardPaste,
+} from "lucide-react";
 import { api } from "@/lib/api";
 import { getCroppedImg } from "@/lib/crop-image";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Dialog,
 	DialogContent,
@@ -16,26 +22,21 @@ import {
 	DialogDescription,
 } from "@/components/ui/dialog";
 
-interface WordDetail {
-	phonetic: string;
-	definition: string;
-}
-
-interface OcrImportDialogProps {
+interface ChineseOcrImportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	unitId: number;
 	onImported: () => void;
 }
 
-type Step = "upload" | "select" | "edit";
+type Step = "upload" | "select";
 
-export function OcrImportDialog({
+export function ChineseOcrImportDialog({
 	open,
 	onOpenChange,
 	unitId,
 	onImported,
-}: OcrImportDialogProps) {
+}: ChineseOcrImportDialogProps) {
 	const [step, setStep] = useState<Step>("upload");
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string>("");
@@ -43,10 +44,6 @@ export function OcrImportDialog({
 	const [ocrWords, setOcrWords] = useState<string[]>([]);
 	const [rawText, setRawText] = useState("");
 	const [selected, setSelected] = useState<Set<string>>(new Set());
-	const [wordDetails, setWordDetails] = useState<Map<string, WordDetail>>(
-		new Map(),
-	);
-	const [lookingUp, setLookingUp] = useState(false);
 	const [importing, setImporting] = useState(false);
 	const [error, setError] = useState("");
 	const [crop, setCrop] = useState<Crop>();
@@ -62,8 +59,6 @@ export function OcrImportDialog({
 		setOcrWords([]);
 		setRawText("");
 		setSelected(new Set());
-		setWordDetails(new Map());
-		setLookingUp(false);
 		setImporting(false);
 		setError("");
 		setCrop(undefined);
@@ -93,12 +88,15 @@ export function OcrImportDialog({
 		if (file) handleFileSelect(file);
 	}
 
-	const handleDrop = useCallback((e: React.DragEvent) => {
-		e.preventDefault();
-		const file = e.dataTransfer.files[0];
-		if (file) handleFileSelect(file);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [imagePreview]);
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			const file = e.dataTransfer.files[0];
+			if (file) handleFileSelect(file);
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[imagePreview],
+	);
 
 	useEffect(() => {
 		if (!open || step !== "upload") return;
@@ -116,7 +114,7 @@ export function OcrImportDialog({
 		}
 		document.addEventListener("paste", handlePaste);
 		return () => document.removeEventListener("paste", handlePaste);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, step, imagePreview]);
 
 	async function handleRecognize() {
@@ -132,9 +130,11 @@ export function OcrImportDialog({
 					imgRef.current.width,
 					imgRef.current.height,
 				);
-				fileToSend = new File([blob], imageFile.name, { type: "image/jpeg" });
+				fileToSend = new File([blob], imageFile.name, {
+					type: "image/jpeg",
+				});
 			}
-			const result = await api.ocrRecognize(fileToSend);
+			const result = await api.cnOcrRecognize(fileToSend);
 			setOcrWords(result.words);
 			setRawText(result.rawText);
 			setSelected(new Set(result.words));
@@ -163,56 +163,16 @@ export function OcrImportDialog({
 		}
 	}
 
-	async function handleLookupAll() {
-		if (selected.size === 0) return;
-		setLookingUp(true);
-		setError("");
-
-		const details = new Map<string, WordDetail>();
-		const words = Array.from(selected);
-
-		const results = await Promise.allSettled(
-			words.map((w) => api.lookupWord(w)),
-		);
-		for (let i = 0; i < words.length; i++) {
-			const r = results[i];
-			if (r.status === "fulfilled") {
-				details.set(words[i], {
-					phonetic: r.value.phonetic || "",
-					definition: r.value.chineseDefinition || "",
-				});
-			} else {
-				details.set(words[i], { phonetic: "", definition: "" });
-			}
-		}
-
-		setWordDetails(details);
-		setLookingUp(false);
-		setStep("edit");
-	}
-
-	function updateDetail(word: string, field: keyof WordDetail, value: string) {
-		setWordDetails((prev) => {
-			const next = new Map(prev);
-			const current = next.get(word) || { phonetic: "", definition: "" };
-			next.set(word, { ...current, [field]: value });
-			return next;
-		});
-	}
-
 	async function handleImport() {
+		if (selected.size === 0) return;
 		setImporting(true);
 		setError("");
 		try {
-			const words = Array.from(wordDetails.entries()).map(
-				([word, detail]) => ({
-					unit_id: unitId,
-					word,
-					phonetic: detail.phonetic || undefined,
-					definition: detail.definition || word,
-				}),
-			);
-			await api.createWordsBatch(words);
+			const words = Array.from(selected).map((word) => ({
+				unit_id: unitId,
+				word,
+			}));
+			await api.createCnWordsBatch(words);
 			onImported();
 			handleOpenChange(false);
 		} catch (err) {
@@ -224,13 +184,11 @@ export function OcrImportDialog({
 
 	const stepTitle: Record<Step, string> = {
 		upload: "上传图片",
-		select: "选择单词",
-		edit: "确认导入",
+		select: "选择词语",
 	};
 	const stepDesc: Record<Step, string> = {
-		upload: "上传包含英文单词的图片，可裁剪选择识别区域",
-		select: `识别到 ${ocrWords.length} 个单词，请勾选需要导入的单词`,
-		edit: "查询到音标和释义，可编辑后确认导入",
+		upload: "上传包含中文词语的图片，可裁剪选择识别区域",
+		select: `识别到 ${ocrWords.length} 个词语，请勾选需要导入的词语`,
 	};
 
 	return (
@@ -263,7 +221,9 @@ export function OcrImportDialog({
 							{!imagePreview ? (
 								<div
 									className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors hover:border-primary hover:bg-muted/50"
-									onClick={() => fileInputRef.current?.click()}
+									onClick={() =>
+										fileInputRef.current?.click()
+									}
 									onDrop={handleDrop}
 									onDragOver={(e) => e.preventDefault()}
 								>
@@ -281,34 +241,36 @@ export function OcrImportDialog({
 										<span>也可直接 Ctrl+V / Cmd+V 粘贴截图</span>
 									</div>
 								</div>
-						) : (
-							<div className="space-y-3">
-								<div className="rounded-lg border overflow-hidden bg-muted/30 flex justify-center">
-									<ReactCrop
-										crop={crop}
-										onChange={(c) => setCrop(c)}
-										onComplete={(c) => setCompletedCrop(c)}
+							) : (
+								<div className="space-y-3">
+									<div className="rounded-lg border overflow-hidden bg-muted/30 flex justify-center">
+										<ReactCrop
+											crop={crop}
+											onChange={(c) => setCrop(c)}
+											onComplete={(c) => setCompletedCrop(c)}
+										>
+											<img
+												ref={imgRef}
+												src={imagePreview}
+												alt="待识别图片"
+												className="max-h-64 object-contain"
+											/>
+										</ReactCrop>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										可拖拽选择裁剪区域，不选则识别整张图片
+									</p>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											fileInputRef.current?.click()
+										}
 									>
-										<img
-											ref={imgRef}
-											src={imagePreview}
-											alt="待识别图片"
-											className="max-h-64 object-contain"
-										/>
-									</ReactCrop>
+										重新选择
+									</Button>
 								</div>
-								<p className="text-xs text-muted-foreground">
-									可拖拽选择裁剪区域，不选则识别整张图片
-								</p>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => fileInputRef.current?.click()}
-								>
-									重新选择
-								</Button>
-							</div>
-						)}
+							)}
 						</div>
 					)}
 
@@ -366,62 +328,6 @@ export function OcrImportDialog({
 							)}
 						</div>
 					)}
-
-					{step === "edit" && (
-						<div className="space-y-3 max-h-80 overflow-y-auto">
-							{Array.from(wordDetails.entries()).map(
-								([word, detail]) => (
-									<div
-										key={word}
-										className="grid grid-cols-[1fr_1fr_1.5fr] gap-2 items-center rounded-lg border p-3"
-									>
-										<div>
-											<Label className="text-xs text-muted-foreground">
-												单词
-											</Label>
-											<p className="font-medium">
-												{word}
-											</p>
-										</div>
-										<div>
-											<Label className="text-xs text-muted-foreground">
-												音标
-											</Label>
-											<Input
-												value={detail.phonetic}
-												onChange={(e) =>
-													updateDetail(
-														word,
-														"phonetic",
-														e.target.value,
-													)
-												}
-												placeholder="/.../"
-												className="h-8 text-sm"
-											/>
-										</div>
-										<div>
-											<Label className="text-xs text-muted-foreground">
-												释义
-											</Label>
-											<Input
-												value={detail.definition}
-												onChange={(e) =>
-													updateDetail(
-														word,
-														"definition",
-														e.target.value,
-													)
-												}
-												placeholder="中文释义"
-												className="h-8 text-sm"
-											/>
-										</div>
-									</div>
-								),
-							)}
-						</div>
-					)}
 				</div>
 
 				<DialogFooter className="gap-2 sm:gap-0">
@@ -429,14 +335,6 @@ export function OcrImportDialog({
 						<Button
 							variant="outline"
 							onClick={() => setStep("upload")}
-						>
-							上一步
-						</Button>
-					)}
-					{step === "edit" && (
-						<Button
-							variant="outline"
-							onClick={() => setStep("select")}
 						>
 							上一步
 						</Button>
@@ -462,25 +360,8 @@ export function OcrImportDialog({
 					)}
 					{step === "select" && (
 						<Button
-							onClick={handleLookupAll}
-							disabled={selected.size === 0 || lookingUp}
-						>
-							{lookingUp ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									查询释义中...
-								</>
-							) : (
-								<>
-									查询释义 ({selected.size})
-								</>
-							)}
-						</Button>
-					)}
-					{step === "edit" && (
-						<Button
 							onClick={handleImport}
-							disabled={wordDetails.size === 0 || importing}
+							disabled={selected.size === 0 || importing}
 						>
 							{importing ? (
 								<>
@@ -488,7 +369,7 @@ export function OcrImportDialog({
 									导入中...
 								</>
 							) : (
-								<>导入 ({wordDetails.size} 个单词)</>
+								<>导入 ({selected.size} 个词语)</>
 							)}
 						</Button>
 					)}

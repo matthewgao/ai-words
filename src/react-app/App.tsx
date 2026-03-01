@@ -13,6 +13,11 @@ import { QuizResultPage } from "@/pages/QuizResultPage";
 import { WrongWordsPage } from "@/pages/WrongWordsPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { AdminPage } from "@/pages/AdminPage";
+import { AdminChinesePage } from "@/pages/AdminChinesePage";
+import { ChineseDictationSetupPage } from "@/pages/ChineseDictationSetupPage";
+import { ChineseDictationPlayPage } from "@/pages/ChineseDictationPlayPage";
+import { ChineseDictationResultPage } from "@/pages/ChineseDictationResultPage";
+import { ChineseWrongWordsPage } from "@/pages/ChineseWrongWordsPage";
 
 export default function App() {
 	return (
@@ -59,25 +64,25 @@ export default function App() {
 							}
 						/>
 						<Route
-							path="chinese"
-							element={
-								<div className="flex items-center justify-center py-20">
-									<p className="text-muted-foreground">
-										语文 — 待开发
-									</p>
-								</div>
-							}
+							path="chinese/dictation"
+							element={<ChineseDictationSetupPage />}
+						/>
+						<Route
+							path="chinese/dictation/play"
+							element={<ChineseDictationPlayPage />}
+						/>
+						<Route
+							path="chinese/dictation/result"
+							element={<ChineseDictationResultPage />}
+						/>
+						<Route
+							path="chinese/wrong-words"
+							element={<ChineseWrongWordsPage />}
 						/>
 						<Route path="admin" element={<AdminPage />} />
 						<Route
 							path="admin/chinese"
-							element={
-								<div className="flex items-center justify-center py-20">
-									<p className="text-muted-foreground">
-										语文管理 — 待开发
-									</p>
-								</div>
-							}
+							element={<AdminChinesePage />}
 						/>
 					</Route>
 				</Routes>
