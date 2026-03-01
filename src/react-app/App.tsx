@@ -48,7 +48,37 @@ export default function App() {
 							element={<WrongWordsPage />}
 						/>
 						<Route path="stats" element={<StatsPage />} />
+						<Route
+							path="todo"
+							element={
+								<div className="flex items-center justify-center py-20">
+									<p className="text-muted-foreground">
+										TODO — 待开发
+									</p>
+								</div>
+							}
+						/>
+						<Route
+							path="chinese"
+							element={
+								<div className="flex items-center justify-center py-20">
+									<p className="text-muted-foreground">
+										语文 — 待开发
+									</p>
+								</div>
+							}
+						/>
 						<Route path="admin" element={<AdminPage />} />
+						<Route
+							path="admin/chinese"
+							element={
+								<div className="flex items-center justify-center py-20">
+									<p className="text-muted-foreground">
+										语文管理 — 待开发
+									</p>
+								</div>
+							}
+						/>
 					</Route>
 				</Routes>
 			</AuthProvider>
