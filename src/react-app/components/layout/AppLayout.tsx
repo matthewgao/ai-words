@@ -4,6 +4,8 @@ import {
 	BarChart3,
 	BookOpen,
 	BookText,
+	CalendarCheck,
+	CalendarDays,
 	ChevronRight,
 	GraduationCap,
 	Home,
@@ -37,8 +39,12 @@ const navGroups: NavGroup[] = [
 		key: "todo",
 		label: "TODO",
 		icon: ListTodo,
-		to: "/todo",
-		items: null,
+		to: "/todo/today",
+		items: [
+			{ to: "/todo/today", label: "今日TODO", icon: CalendarCheck },
+			{ to: "/todo/week", label: "本周TODO", icon: CalendarDays },
+			{ to: "/todo/stats", label: "完成统计", icon: BarChart3 },
+		],
 	},
 	{
 		key: "english",

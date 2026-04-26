@@ -361,6 +361,100 @@ export type Database = {
 					},
 				];
 			};
+			todos: {
+				Row: {
+					id: number;
+					user_id: string;
+					title: string;
+					description: string;
+					start_date: string | null;
+					due_date: string | null;
+					priority: number;
+					is_recurring: boolean;
+					recurrence_days: number | null;
+					completed: boolean;
+					completed_at: string | null;
+					recurring_group_id: string | null;
+					created_at: string;
+				};
+				Insert: {
+					user_id: string;
+					title: string;
+					description?: string;
+					start_date?: string | null;
+					due_date?: string | null;
+					priority?: number;
+					is_recurring?: boolean;
+					recurrence_days?: number | null;
+					completed?: boolean;
+					completed_at?: string | null;
+					recurring_group_id?: string | null;
+					created_at?: string;
+				};
+				Update: {
+					title?: string;
+					description?: string;
+					start_date?: string | null;
+					due_date?: string | null;
+					priority?: number;
+					is_recurring?: boolean;
+					recurrence_days?: number | null;
+					completed?: boolean;
+					completed_at?: string | null;
+					recurring_group_id?: string | null;
+				};
+				Relationships: [];
+			};
+			todo_tags: {
+				Row: {
+					id: number;
+					user_id: string;
+					name: string;
+					color: string;
+					created_at: string;
+				};
+				Insert: {
+					user_id: string;
+					name: string;
+					color?: string;
+					created_at?: string;
+				};
+				Update: {
+					name?: string;
+					color?: string;
+				};
+				Relationships: [];
+			};
+			todo_tag_map: {
+				Row: {
+					todo_id: number;
+					tag_id: number;
+				};
+				Insert: {
+					todo_id: number;
+					tag_id: number;
+				};
+				Update: {
+					todo_id?: number;
+					tag_id?: number;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "todo_tag_map_todo_id_fkey";
+						columns: ["todo_id"];
+						isOneToOne: false;
+						referencedRelation: "todos";
+						referencedColumns: ["id"];
+					},
+					{
+						foreignKeyName: "todo_tag_map_tag_id_fkey";
+						columns: ["tag_id"];
+						isOneToOne: false;
+						referencedRelation: "todo_tags";
+						referencedColumns: ["id"];
+					},
+				];
+			};
 		};
 		Views: Record<string, never>;
 		Functions: Record<string, never>;

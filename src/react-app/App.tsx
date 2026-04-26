@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -12,6 +12,9 @@ import { QuizPlayPage } from "@/pages/QuizPlayPage";
 import { QuizResultPage } from "@/pages/QuizResultPage";
 import { WrongWordsPage } from "@/pages/WrongWordsPage";
 import { StatsPage } from "@/pages/StatsPage";
+import { TodoTodayPage } from "@/pages/TodoTodayPage";
+import { TodoWeekPage } from "@/pages/TodoWeekPage";
+import { TodoStatsPage } from "@/pages/TodoStatsPage";
 import { AdminPage } from "@/pages/AdminPage";
 import { AdminChinesePage } from "@/pages/AdminChinesePage";
 import { ChineseDictationSetupPage } from "@/pages/ChineseDictationSetupPage";
@@ -55,13 +58,19 @@ export default function App() {
 						<Route path="stats" element={<StatsPage />} />
 						<Route
 							path="todo"
-							element={
-								<div className="flex items-center justify-center py-20">
-									<p className="text-muted-foreground">
-										TODO — 待开发
-									</p>
-								</div>
-							}
+							element={<Navigate to="/todo/today" replace />}
+						/>
+						<Route
+							path="todo/today"
+							element={<TodoTodayPage />}
+						/>
+						<Route
+							path="todo/week"
+							element={<TodoWeekPage />}
+						/>
+						<Route
+							path="todo/stats"
+							element={<TodoStatsPage />}
 						/>
 						<Route
 							path="chinese/dictation"
